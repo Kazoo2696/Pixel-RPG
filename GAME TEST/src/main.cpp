@@ -88,6 +88,15 @@ struct Game{
  void slime(const Enemy&e){int x=(int)e.p.x,y=(int)e.p.y;if(!slimeSprite.pixels.empty()){int dir=std::abs(e.v.x)>std::abs(e.v.y)?1:(e.v.y<0?2:0);int row=(e.hit>0?9:(len(e.v)>3?3:0))+dir;int count=e.hit>0?4:(row<3?4:6);int frame=(int)(time*(e.hit>0?14.f:8.f)+e.p.x*.03f)%count;slimeSprite.draw(g,x-16,y-23,frame*32,row*32,32,32,e.v.x<0);return;}g.rect(x-6,y-2,12,7,C(35,78,44));g.rect(x-5,y-5,10,9,C(91,190,63));}
  void wraith(const Enemy&e){int x=(int)e.p.x,y=(int)e.p.y+(int)std::sin(time*5.f+e.p.x)*2,sz=e.type==2?9:7;uint32_t edge=C(23,20,48),body=e.hit>0?C(235,224,255):(e.type==2?C(171,67,220):C(85,97,205)),glow=e.type==2?C(244,102,220):C(91,218,239);g.rect(x-sz,y-sz,sz*2+1,sz+7,edge);g.rect(x-sz+2,y-sz+1,sz*2-3,sz+5,body);g.rect(x-sz+3,y+4,3,4,body);g.rect(x+sz-5,y+4,3,4,body);g.p(x-3,y-2,glow);g.p(x+3,y-2,glow);g.p(x-2,y-1,WHITE);g.p(x+4,y-1,WHITE);for(int i=0;i<3;++i){float a=time*2.5f+i*2.09f;g.p(x+(int)(std::cos(a)*(sz+3)),y+(int)(std::sin(a)*(sz+3)),glow);}}
  void skeleton2(const Enemy&e){int frame=(int)(time*7.f+e.p.x*.02f)%6,row;if(e.hit>0)row=6;else if(dist(e.p,hero)<20)row=e.v.x<0?4:5;else if(std::abs(e.v.y)>std::abs(e.v.x))row=e.v.y<0?0:1;else row=e.v.x<0?2:3;int fw=157,fh=186,sx=frame*fw,sy=row*fh;if(sx+fw>skeleton2Sprite.w)sx=std::max(0,skeleton2Sprite.w-fw);if(sy+fh>skeleton2Sprite.h)sy=std::max(0,skeleton2Sprite.h-fh);skeleton2Sprite.drawScaledChroma(g,(int)e.p.x-18,(int)e.p.y-30,36,43,sx,sy,fw,fh);}
+ void enemyHealthBar(const Enemy&e){
+  int maxHp=e.type==2?6:(e.type==3?5:(e.type==1?4:3));
+  int w=20,h=4,x=(int)e.p.x-w/2,y=(int)e.p.y-(e.type==3?34:18);
+  int fill=std::clamp(e.hp,0,maxHp)*(w-2)/maxHp;
+  uint32_t color=e.hp*2>maxHp?C(73,201,91):(e.hp*4>maxHp?C(239,181,55):C(226,68,68));
+  g.rect(x,y,w,h,C(13,20,24));
+  g.rect(x+1,y+1,w-2,h-2,C(78,39,43));
+  if(fill>0)g.rect(x+1,y+1,fill,h-2,color);
+ }
  void heroDraw(){int x=(int)hero.x,y=(int)hero.y;if(inv>0&&((int)(time*15)&1))return;if(!heroSprite.pixels.empty()){bool moving=key['A']||key['D']||key['W']||key['S']||key[VK_LEFT]||key[VK_RIGHT]||key[VK_UP]||key[VK_DOWN];int dir=std::abs(face.x)>std::abs(face.y)?1:(face.y<0?2:0);int row=(attack>0?6:(moving?3:0))+dir;int frame=(int)(time*(attack>0?14.f:9.f))%6;heroSprite.draw(g,x-24,y-31,frame*48,row*48,48,48,face.x<-.2f);return;}g.rect(x-4,y+5,3,5,C(36,57,76));g.rect(x+2,y+5,3,5,C(36,57,76));g.rect(x-6,y-2,12,9,C(24,116,133));g.rect(x-4,y-7,8,7,C(33,163,169));g.rect(x-2,y-4,5,5,C(232,181,139));g.p(x+2,y-2,DARK);}
  void renderMoonRuins(){g.clear(C(24,24,54));for(int ty=14;ty<SH;ty+=16)for(int tx=0;tx<SW;tx+=16){uint32_t h=hash2d(tx/16+90,ty/16+40);uint32_t c=(h%4==0)?C(38,39,79):C(31,32,68);g.rect(tx,ty,16,16,c);if(h%3==0)g.p(tx+(int)(h%13)+1,ty+(int)((h>>7)%13)+1,C(83,75,135));}
   // Broken moon temple, pillars and glowing cracks.
@@ -96,7 +105,7 @@ struct Game{
   g.line(13,94,76,91,C(75,84,179));g.line(76,91,92,105,C(99,205,229));g.line(307,134,252,126,C(75,84,179));g.line(252,126,235,138,C(99,205,229));
   // Arrival portal remains visible at the southern edge.
   int pulse=(int)(std::sin(time*4.f)*2);g.rect(149-pulse,153-pulse,23+pulse*2,8+pulse,C(32,25,70));g.rect(153-pulse,151-pulse,15+pulse*2,8+pulse*2,C(86,70,190));g.rect(157,151,7,5,C(113,230,247));
-  for(const auto&e:enemies)if(e.alive){if(e.type==3)skeleton2(e);else wraith(e);}heroDraw();if(dash>0&&!dustSprite.pixels.empty()){int frame=(int)(time*18)%4;dustSprite.draw(g,(int)hero.x-6-(int)face.x*8,(int)hero.y+5-(int)face.y*6,frame*12,0,12,12);}
+  for(const auto&e:enemies)if(e.alive){if(e.type==3)skeleton2(e);else wraith(e);enemyHealthBar(e);}heroDraw();if(dash>0&&!dustSprite.pixels.empty()){int frame=(int)(time*18)%4;dustSprite.draw(g,(int)hero.x-6-(int)face.x*8,(int)hero.y+5-(int)face.y*6,frame*12,0,12,12);}
   int sx=(int)hero.x-10,sy=(int)hero.y-10+(int)std::sin(time*5);g.rect(sx-1,sy-1,3,3,C(166,94,242));g.p(sx-3,sy,C(91,218,239));g.p(sx+3,sy,C(91,218,239));
   g.rect(0,0,SW,14,C(10,10,27));for(int i=0;i<5;i++){uint32_t c=i<hp?C(232,65,75):C(74,67,67);g.rect(7+i*10,4,7,6,c);g.p(8+i*10,3,c);g.p(12+i*10,3,c);}int left=0;for(const auto&e:enemies)if(e.alive)left++;text(g,67,5,"WISPS "+std::to_string(left),C(111,221,241));text(g,207,5,"MOONLIT RUINS",C(196,139,255));text(g,83,166,"DEFEAT THE VOID WISPS",WHITE);
   if(teleport>0){int inset=(int)((1.f-teleport)*160.f);g.rect(0,0,std::max(0,160-inset),SH,C(205,244,255));g.rect(160+inset,0,std::max(0,160-inset),SH,C(205,244,255));}
@@ -145,7 +154,7 @@ struct Game{
   int cx2=52,cy2=116;if(!chest2Sprite.pixels.empty())chest2Sprite.draw(g,cx2-8,cy2-9,(chest2?3:0)*16,0,16,16);
   if(!rock1.pixels.empty()){rock1.draw(g,103,66,0,0,16,16);rock2.draw(g,215,122,0,0,16,16);rock3.draw(g,274,143,0,0,16,16);}
   for(auto&d:drops)if(!d.got){int y=(int)d.p.y+(int)(sin(time*6+d.p.x)*2);g.rect((int)d.p.x-2,y-4,5,8,C(28,112,181));g.rect((int)d.p.x-1,y-3,3,6,C(72,221,245));}
-  for(auto&e:enemies)if(e.alive){if(e.type==3)skeleton2(e);else slime(e);}heroDraw();
+  for(const auto&e:enemies)if(e.alive){if(e.type==3)skeleton2(e);else slime(e);enemyHealthBar(e);}heroDraw();
   if(dash>0&&!dustSprite.pixels.empty()){int frame=(int)(time*18)%4;dustSprite.draw(g,(int)hero.x-6-(int)face.x*8,(int)hero.y+5-(int)face.y*6,frame*12,0,12,12);}
   // spirit companion
   int sx=(int)hero.x-10,sy=(int)hero.y-10+(int)sin(time*5);g.p(sx,sy,C(255,246,174));g.rect(sx-1,sy-1,3,3,C(255,178,42));g.p(sx-3,sy,C(255,208,65));g.p(sx+3,sy,C(255,208,65));
